@@ -1,0 +1,3 @@
+# Dependencies for Vertex AI integration
+google-cloud-aiplatform
+google-auth

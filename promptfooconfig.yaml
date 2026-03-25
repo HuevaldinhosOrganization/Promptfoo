@@ -1,0 +1,26 @@
+description: "My first Promptfoo prompt evaluation learning project"
+
+prompts:
+  - file://prompts.txt
+
+providers:
+  # Using Vertex AI Gemini Pro for inference
+  - id: vertex:gemini-2.5-pro
+    config:
+      temperature: 0.7
+
+tests:
+  - vars:
+      topic: "Python programming"
+    assert:
+      # A simple LLM-based assertion
+      - type: icontains
+        value: "programming language"
+      # Our custom python evaluator
+      - type: python
+        value: file://custom_eval.py
+  - vars:
+      topic: "YAML configuration files"
+    assert:
+      - type: python
+        value: file://custom_eval.py
