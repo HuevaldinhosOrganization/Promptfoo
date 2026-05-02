@@ -1,0 +1,5 @@
+name: Wikipedia NER
+dataset: Wikipedia
+task: named entity recognition
+input_column: text
+output_column: entities

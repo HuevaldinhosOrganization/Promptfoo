@@ -1,13 +1,13 @@
 # Promptfoo Learning Guide
 
-Welcome to the Promptfoo learning project! This repository contains a working configuration to help you learn Promptfoo basics, utilizing Google Vertex AI and Python integration.
+Welcome to the Promptfoo learning project! This repository contains a working configuration to help you learn Promptfoo basics, utilizing Ollama free models and Python integration for NLP task evaluation.
 
 ## What is Promptfoo?
 Promptfoo is a CLI and library for evaluating LLM output quality. It allows you to systematically test prompts and models against predefined test cases, ensuring that your LLM applications behave reliably as you change prompts, models, or system parameters.
 
 ## Core Concepts to Know
 
-1. **Providers**: The LLM APIs or models you are evaluating (e.g., Google Vertex AI, Anthropic, OpenAI).
+1. **Providers**: The LLM APIs or models you are evaluating (e.g., Ollama models like llama3, Anthropic, OpenAI).
 2. **Prompts**: The instructions sent to the LLM, managed in separate files (e.g., `prompts.txt`) with variables injected via placeholders (`{{topic}}`).
 3. **Tests**: Evaluating specific scenarios using `vars` (ground truth data) and `assert` statements (validation rules).
 
@@ -61,27 +61,89 @@ flowchart TD
 
 ## Setup & Dependencies
 
-1. **Install Python dependencies:**
+1. **Install Ollama:**
+   ```bash
+   # Download from https://ollama.ai and install
+   # Pull models, e.g.:
+   ollama pull llama3
+   ```
+
+2. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-
-2. **Authenticate with Google Cloud (for Vertex AI):**
-   ```bash
-   gcloud auth application-default login
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-   Or set the `GOOGLE_APPLICATION_CREDENTIALS` and `GCLOUD_PROJECT` environment variables.
 
 3. **Install Promptfoo:**
    ```bash
    npm install -g promptfoo
    ```
 
+## How to Run the Project
+
+1. **Activate your Python environment** (optional but recommended):
+   ```bash
+   python -m venv .venv
+   # Windows
+   .venv\Scripts\Activate.ps1
+   # macOS / Linux
+   source .venv/bin/activate
+   ```
+
+2. **Install dependencies** if not already installed:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Start the backend API**:
+   ```bash
+   uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+   ```
+   The FastAPI server will be available at `http://127.0.0.1:8000`.
+
+4. **Run the Promptfoo evaluation** in a separate terminal:
+   ```bash
+   npx promptfoo eval
+   ```
+   This evaluates the configured prompts and providers, then prints a pass/fail summary.
+
+5. **View results** in the Promptfoo web dashboard:
+   ```bash
+   npx promptfoo view
+   ```
+
+6. **Run tests**:
+   ```bash
+   pytest tests/unit tests/functional
+   ```
+
+## Dataset Configurations
+
+The project includes YAML configuration files for various NLP tasks, defining dataset setups for evaluation:
+
+- `imdb_sentiment.yaml`: Sentiment analysis on IMDB movie reviews.
+- `amazon_reviews.yaml`: Text classification for Amazon product reviews.
+- `cornell_dialog.yaml`: Conversational dialogue generation using Cornell Movie Dialog Corpus.
+- `wikipedia_ner.yaml`: Named Entity Recognition (NER) for Wikipedia articles.
+
+Each config specifies the dataset name, task, input/output columns for structured evaluation.
+
 ## Project Structure
 - `promptfooconfig.yaml`: The main configuration file tying everything together (specifies providers, prompts, and the test cases).
-- `prompts.txt`: Contains the raw prompt template.
-- `custom_eval.py`: A Python script containing custom assertion logic. During evaluations, Promptfoo executes this to validate the outputs programmatically based on your logic.
+- `sentiment_prompt.txt`: Prompt for sentiment analysis tasks.
+- `classification_prompt.txt`: Prompt for text classification tasks.
+- `dialogue_prompt.txt`: Prompt for dialogue generation tasks.
+- `ner_prompt.txt`: Prompt for named entity recognition tasks.
+- `custom_eval.py`: A Python script containing custom assertion logic for accuracy calculation against dataset.
+- `backend/app.py`: FastAPI backend providing NLP task endpoints.
+- `backend/api.py`: Convenience alias exposing the same FastAPI application.
+- `custom_provider.py`: Custom Promptfoo provider that calls the API.
+- `dataset.json`: Sample dataset with Q&A pairs for ground truth comparisons.
+- `imdb_sentiment.yaml`: Dataset configuration for IMDB sentiment analysis.
+- `amazon_reviews.yaml`: Dataset configuration for Amazon product reviews classification.
+- `cornell_dialog.yaml`: Dataset configuration for Cornell movie dialog generation.
+- `wikipedia_ner.yaml`: Dataset configuration for Wikipedia NER.
+- `requirements.txt`: Python dependencies (FastAPI, etc.).
+- `result.json`: Output of the latest evaluation run.
 
 ## Running Evaluations
 

@@ -1,3 +1,7 @@
-# Dependencies for Vertex AI integration
-google-cloud-aiplatform
-google-auth
+# No Python dependencies needed for Ollama (CLI-based)
+# difflib is built-in
+fastapi
+uvicorn
+requests
+pytest
+pytest-xdist

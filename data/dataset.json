@@ -1,0 +1,22 @@
+[
+  {
+    "topic": "Python programming",
+    "expected": "Python is a high-level programming language known for its simplicity and readability."
+  },
+  {
+    "topic": "YAML configuration files",
+    "expected": "YAML is a human-readable data serialization standard used for configuration files."
+  },
+  {
+    "topic": "Machine learning basics",
+    "expected": "Machine learning is a subset of AI that enables systems to learn from data without explicit programming."
+  },
+  {
+    "topic": "Web development",
+    "expected": "Web development involves creating websites and web applications using technologies like HTML, CSS, and JavaScript."
+  },
+  {
+    "topic": "Data structures",
+    "expected": "Data structures are ways to organize and store data efficiently, such as arrays, lists, and trees."
+  }
+]

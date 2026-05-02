@@ -1,0 +1,1 @@
+Analyze the sentiment of this movie review: {{text}}. Respond with exactly one word: 'positive' or 'negative'.

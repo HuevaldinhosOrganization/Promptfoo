@@ -1,26 +1,126 @@
 description: "My first Promptfoo prompt evaluation learning project"
 
 prompts:
-  - file://prompts.txt
+  - file://prompts/sentiment_prompt.txt
+  - file://prompts/classification_prompt.txt
+  - file://prompts/dialogue_prompt.txt
+  - file://prompts/ner_prompt.txt
 
 providers:
-  # Using Vertex AI Gemini Pro for inference
-  - id: vertex:gemini-2.5-pro
+  # Custom API provider
+  - id: file://providers/custom_provider.py
     config:
-      temperature: 0.7
+      apiBaseUrl: http://localhost:8000
 
 tests:
-  - vars:
-      topic: "Python programming"
-    assert:
-      # A simple LLM-based assertion
-      - type: icontains
-        value: "programming language"
-      # Our custom python evaluator
-      - type: python
-        value: file://custom_eval.py
-  - vars:
-      topic: "YAML configuration files"
+  # IMDB Sentiment Analysis
+  - prompt: 0
+    vars:
+      text: "This movie was absolutely fantastic! I loved every minute of it."
+      task: "sentiment"
+      expected: "positive"
     assert:
       - type: python
-        value: file://custom_eval.py
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate if the sentiment analysis is correct.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+  - prompt: 0
+    vars:
+      text: "This film was terrible. I hated it from start to finish."
+      task: "sentiment"
+      expected: "negative"
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate if the sentiment analysis is correct.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+
+  # Amazon Text Classification
+  - prompt: 1
+    vars:
+      text: "This smartphone has great battery life and camera quality."
+      task: "classify"
+      expected: "electronics"
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate if the classification is appropriate.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+  - prompt: 1
+    vars:
+      text: "This novel is a thrilling mystery with unexpected twists."
+      task: "classify"
+      expected: "books"
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate if the classification is appropriate.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+
+  # Cornell Dialogue Generation
+  - prompt: 2
+    vars:
+      context: "Hello, how are you today?"
+      task: "dialogue"
+      expected: "I'm doing well, thank you for asking."
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate the naturalness of the dialogue response.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+  - prompt: 2
+    vars:
+      context: "What's your favorite movie?"
+      task: "dialogue"
+      expected: "I enjoy science fiction films like Inception."
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate the naturalness of the dialogue response.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+
+  # Wikipedia NER
+  - prompt: 3
+    vars:
+      text: "Albert Einstein was born in Germany and won the Nobel Prize in Physics."
+      task: "ner"
+      expected: "Albert Einstein, Germany, Nobel Prize, Physics"
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate the accuracy of named entity extraction.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
+  - prompt: 3
+    vars:
+      text: "The Eiffel Tower is located in Paris, France."
+      task: "ner"
+      expected: "Eiffel Tower, Paris, France"
+    assert:
+      - type: python
+        value: file://evaluation/custom_eval.py
+      - type: llm-rubric
+        value: |
+          Evaluate the accuracy of named entity extraction.
+          Score from 1 (poor) to 5 (excellent).
+        provider: ollama:llama3
