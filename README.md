@@ -1,19 +1,76 @@
 # Promptfoo Learning Guide
 
-Welcome to the Promptfoo learning project! This repository contains a working configuration to help you learn Promptfoo basics, utilizing Ollama free models and Python integration for NLP task evaluation.
+Welcome to this Promptfoo learning project. It demonstrates prompt templates, test cases, custom Python assertions, an Ollama rubric judge, and Promptfoo's evaluation UI. In the current configuration, a custom Python provider creates the task outputs; Ollama does not generate those outputs.
 
 ## What is Promptfoo?
 Promptfoo is a CLI and library for evaluating LLM output quality. It allows you to systematically test prompts and models against predefined test cases, ensuring that your LLM applications behave reliably as you change prompts, models, or system parameters.
 
 ## Core Concepts to Know
 
-1. **Providers**: The LLM APIs or models you are evaluating (e.g., Ollama models like llama3, Anthropic, OpenAI).
-2. **Prompts**: The instructions sent to the LLM, managed in separate files (e.g., `prompts.txt`) with variables injected via placeholders (`{{topic}}`).
-3. **Tests**: Evaluating specific scenarios using `vars` (ground truth data) and `assert` statements (validation rules).
+1. **Providers**: The configured custom Python provider produces the output for each test. Ollama's `llama3` provider is used separately by `llm-rubric` assertions as a judge.
+2. **Prompts**: Task instructions live in separate files under `prompts/`, with test variables substituted for placeholders such as `{{text}}` and `{{context}}`.
+3. **Tests**: Each test supplies input variables and expected values, then applies both a Python assertion and an LLM rubric assertion.
 
-### Assertion Hierarchy (Types of Tests)
+## Screenshots
 
-Promptfoo evaluates LLM outputs using an assertion hierarchy categorized by cost, complexity, and specific testing goals. Understanding these types ensures efficient and robust test pipeline execution.
+These screenshots show the Promptfoo interface for this project:
+
+### Evaluation results
+![Evaluation results table with test inputs, provider outputs, and assertion results](assets/localhost-eval-table.png)
+
+This view lets you inspect an evaluation case by case. The variables columns show the inputs and expected value; the results columns show the provider output, each assertion's status and explanation, the rendered prompt, and latency. Use it to pinpoint failed inputs and see whether the Python check, Ollama judge, or both failed.
+
+### Evaluation list
+![List of evaluation runs and pass rates](assets/evals.png)
+
+This list summarizes saved runs. It shows each run's ID and date, description, pass rate, and test count. Use it to find a run and compare overall results across evaluations.
+
+### Evaluation history
+![Evaluation history table](assets/eval-history.png)
+
+The history organizes results by evaluation, dataset, provider, and prompt, with pass-rate metrics. It helps identify which provider or prompt version produced each result and navigate between runs.
+
+### Prompt execution history
+![Prompt execution history](assets/prompt-execution-history.png)
+
+This view focuses on a prompt's history: it shows the prompt content and the evaluations that used it, along with the dataset, score, pass rate, and counts of passed, failed, or errored tests. Use it to see whether a prompt's results change across runs.
+
+### Prompt templates
+![Prompt templates tracked in Promptfoo](assets/prompts-table.png)
+
+The prompt table shows each template's ID, label or source file, a preview of its text, its latest evaluation, and how many evaluations have used it. Use it to find a template and check whether it has evaluation history.
+
+### Dataset details
+![Dataset details and per-prompt results](assets/dataset-details.png)
+
+The detail view shows the configured test cases—including the selected prompt, variables, and assertions—and a per-prompt results summary with scores, pass rates, and passed and failed counts. Use it to understand which data fed the evaluation and how each template performed on that dataset.
+
+### Evaluation selector
+![Evaluation detail view with run selection and outputs](assets/localhost-eval-history.png)
+
+This selector lets you switch between saved evaluations without leaving the current results view. It shows each run's ID, date, description, pass rate, and test count so you can open another run and compare its outputs and failures with the current one.
+
+## What this implementation does well
+
+- Keeps prompt templates, test inputs, expected values, and assertions in a reviewable Promptfoo configuration.
+- Demonstrates multiple assertion styles on the same cases: deterministic Python checks and an Ollama `llm-rubric` judge.
+- Makes failures inspectable. The Python checks return a reason, while the rubric can provide a natural-language assessment; Promptfoo displays outputs and assertion outcomes together.
+- Supports repeatable local runs and comparison through Promptfoo's evaluation and prompt history UI. Ollama can run locally, without sending judge requests to a hosted model API.
+
+## Limitations and what the results mean
+
+- **The prompts are not driving the outputs yet.** `providers/custom_provider.py` selects a hard-coded Python function based on the `task` variable and ignores its `prompt` argument. Editing a prompt therefore does not change the custom provider's output. This setup demonstrates Promptfoo evaluation mechanics, but it does not measure whether those prompt edits improve a real model.
+- **The custom provider is fixture-like logic, not an LLM or the FastAPI backend.** Its keyword rules, dialogue responses, and NER entity list cover the examples in this repository rather than general language. The `apiBaseUrl` setting is not used by that provider, so starting the FastAPI app is not required for the configured eval.
+- **Coverage is small.** The configuration contains eight hand-written cases across four tasks. Passing them does not establish accuracy on broader, representative datasets or production traffic.
+- **The checks are narrow.** Sentiment and classification require exact output strings; NER compares comma-separated entity strings; dialogue uses character-level `SequenceMatcher` similarity with a fixed threshold. These rules can reject valid paraphrases or accept text that is lexically similar but semantically wrong.
+- **LLM-as-a-judge is not a ground-truth substitute.** Ollama's rubric judgment can vary and may disagree with the deterministic Python assertion. A test must satisfy all its configured assertions to pass.
+- **Local does not mean cost-free or resource-free.** Ollama avoids hosted inference charges for the judge, but needs the model downloaded and uses local compute, memory, and time. Results also depend on the model/runtime version.
+
+The latest evaluation screenshot shows **5 of 8 cases passing (62.5%)**. Treat that as a result for this small demo and its current assertions, not as a general model-quality score.
+
+### Other Promptfoo assertion options
+
+Promptfoo supports additional assertion types beyond the Python and LLM-as-a-judge assertions used by this repository:
 
 | Test Type | Cost | Mechanisms | Primary Use Cases |
 | :--- | :--- | :--- | :--- |
@@ -22,42 +79,6 @@ Promptfoo evaluates LLM outputs using an assertion hierarchy categorized by cost
 | **Semantic** | Low | Vector embedding distance (`similar`). | Verifying the contextual meaning of an LLM's output against the ground truth, effectively ignoring phrasing or syntactic differences. |
 | **LLM-as-a-Judge** | High | `llm-rubric`, `factuality`, `model-graded-closedqa`. | Evaluating subjective criteria using a superior reference model (e.g., testing tone compliance, empathetic responses, or detecting hallucinations). |
 | **Custom Code** | Variable | Python or JavaScript functions (`python`, `javascript`). | Executing complex business logic (e.g., testing an LLM-generated SQL query against a sandbox database, or executing custom local validation scripts). |
-
-### Division of Labor (Role Interaction)
-
-Effective, enterprise-grade LLM testing deployments demand a clear separation of concerns across engineering and data teams when leveraging Promptfoo.
-
-| Role | Operational Scope & Workflow |
-| :--- | :--- |
-| **Data Analysts / Domain Experts** | Own the test datasets (`vars`) and define the "ground truth." Leverage the Promptfoo web viewer to browse reports, analyze model responses, and identify failure edge cases. |
-| **QA Engineers** | Own the assertions (`assert`) and CI/CD pipelines. Translate complex business rules into automated, blocking test cases designed to prevent regressions from reaching production environments. |
-| **ML Engineers** | Own the provider configuration (e.g., Vertex AI endpoints, routing rules). Optimize model hyperparameters, manage prompt versioning, and maintain the underlying LLM inference infrastructure. |
-
-### Process Logic & Role Workflow
-
-```mermaid
-flowchart TD
-    ML[ML Engineer] -->|Configures| PROV[Provider Endpoints]
-    
-    DA[Data Analyst] -->|Defines| VARS[Ground Truth vars]
-    
-    VARS -.->|Injected into| EVAL[Promptfoo Evaluation]
-    PROV -.->|Executes| EVAL
-    
-    QA[QA Engineer] -->|Authors| ASSERT[Assertions]
-    
-    ASSERT -->|Validates| EVAL
-    
-    EVAL -->|Generates| REP[Web Viewer Reports]
-    EVAL -->|Automates| CI[CI/CD Quality Gates]
-    
-    QA -->|Maintains| CI
-    
-    REP -->|Analyzed by| DA
-    DA -->|Identifies| EDGE[Failure Edge Cases]
-    
-    EDGE -.->|Refines| VARS
-```
 
 ## Setup & Dependencies
 
@@ -94,56 +115,42 @@ flowchart TD
    pip install -r requirements.txt
    ```
 
-3. **Start the backend API**:
-   ```bash
-   uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
-   ```
-   The FastAPI server will be available at `http://127.0.0.1:8000`.
-
-4. **Run the Promptfoo evaluation** in a separate terminal:
+3. **Run the Promptfoo evaluation**:
    ```bash
    npx promptfoo eval
    ```
-   This evaluates the configured prompts and providers, then prints a pass/fail summary.
+   This executes the configured provider and assertions, then prints a pass/fail summary. Ensure Ollama is running and `llama3` is available for the rubric assertions.
 
-5. **View results** in the Promptfoo web dashboard:
+4. **View results** in the Promptfoo web dashboard:
    ```bash
    npx promptfoo view
    ```
 
-6. **Run tests**:
+5. **Run tests**:
    ```bash
    pytest tests/unit tests/functional
    ```
 
+The FastAPI application under `backend/` can be run separately, but it is not called by the provider configured in `promptfooconfig.yaml`.
+
 ## Dataset Configurations
 
-The project includes YAML configuration files for various NLP tasks, defining dataset setups for evaluation:
+The `config/` directory contains example dataset configuration files:
 
-- `imdb_sentiment.yaml`: Sentiment analysis on IMDB movie reviews.
-- `amazon_reviews.yaml`: Text classification for Amazon product reviews.
-- `cornell_dialog.yaml`: Conversational dialogue generation using Cornell Movie Dialog Corpus.
-- `wikipedia_ner.yaml`: Named Entity Recognition (NER) for Wikipedia articles.
-
-Each config specifies the dataset name, task, input/output columns for structured evaluation.
+- `imdb_sentiment.yaml`
+- `cornell_dialog.yaml`
+- `wikipedia_ner.yaml`
 
 ## Project Structure
-- `promptfooconfig.yaml`: The main configuration file tying everything together (specifies providers, prompts, and the test cases).
-- `sentiment_prompt.txt`: Prompt for sentiment analysis tasks.
-- `classification_prompt.txt`: Prompt for text classification tasks.
-- `dialogue_prompt.txt`: Prompt for dialogue generation tasks.
-- `ner_prompt.txt`: Prompt for named entity recognition tasks.
-- `custom_eval.py`: A Python script containing custom assertion logic for accuracy calculation against dataset.
-- `backend/app.py`: FastAPI backend providing NLP task endpoints.
-- `backend/api.py`: Convenience alias exposing the same FastAPI application.
-- `custom_provider.py`: Custom Promptfoo provider that calls the API.
-- `dataset.json`: Sample dataset with Q&A pairs for ground truth comparisons.
-- `imdb_sentiment.yaml`: Dataset configuration for IMDB sentiment analysis.
-- `amazon_reviews.yaml`: Dataset configuration for Amazon product reviews classification.
-- `cornell_dialog.yaml`: Dataset configuration for Cornell movie dialog generation.
-- `wikipedia_ner.yaml`: Dataset configuration for Wikipedia NER.
-- `requirements.txt`: Python dependencies (FastAPI, etc.).
-- `result.json`: Output of the latest evaluation run.
+- `promptfooconfig.yaml`: Provider, prompt, test-case, and assertion configuration.
+- `prompts/`: Prompt templates for sentiment, classification, dialogue, and NER.
+- `providers/custom_provider.py`: Hard-coded Python task outputs used by the configured custom provider.
+- `evaluation/custom_eval.py`: Deterministic Python assertion logic.
+- `backend/`: Optional FastAPI application; it is not wired to the configured Promptfoo provider.
+- `config/`: Example YAML dataset configurations.
+- `data/dataset.json`: Sample data.
+- `assets/`: Screenshots embedded above.
+- `requirements.txt`: Python dependencies for the backend and tests.
 
 ## Running Evaluations
 
