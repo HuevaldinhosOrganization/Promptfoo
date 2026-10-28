@@ -1,0 +1,5 @@
+name: Cornell Movie Dialog Generation
+dataset: Cornell
+task: conversational dialogue generation
+input_column: context
+output_column: response

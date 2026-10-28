@@ -1,0 +1,1 @@
+Given this conversation context: {{context}}, generate a natural response.

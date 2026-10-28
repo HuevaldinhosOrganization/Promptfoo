@@ -1,0 +1,1 @@
+Extract named entities from this text: {{text}}. Respond with only a comma-separated list of named entities, no other text.

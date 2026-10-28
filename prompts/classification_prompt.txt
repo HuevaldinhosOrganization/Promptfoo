@@ -1,0 +1,1 @@
+Classify this product review into a category: {{text}}. Respond with exactly one word: the category name.

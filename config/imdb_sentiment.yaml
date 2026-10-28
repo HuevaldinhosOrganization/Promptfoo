@@ -1,0 +1,5 @@
+name: IMDB Sentiment Analysis
+dataset: IMDB
+task: sentiment analysis
+input_column: text
+output_column: sentiment
